@@ -1,3 +1,4 @@
+import 'package:app_settings/app_settings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
@@ -27,6 +28,7 @@ class NotificationServices {
     } else {
       if (kDebugMode) {
         print('user denied permission');
+        AppSettings.openNotificationSettings();
       }
     }
   }
