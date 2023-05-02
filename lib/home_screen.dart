@@ -1,4 +1,5 @@
 import 'package:fcm/notification_services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,6 +16,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     notificationServices.requestNotificationPermission();
+    notificationServices.isRefreshToken();
+    notificationServices.getDeviceToken().then((value) {
+      if (kDebugMode) {
+        print('Device Token:');
+        print(value);
+      }
+    });
   }
 
   @override

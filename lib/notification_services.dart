@@ -32,4 +32,18 @@ class NotificationServices {
       }
     }
   }
+
+  Future<String> getDeviceToken() async {
+    String? token = await messaging.getToken();
+    return token!;
+  }
+
+  void isRefreshToken() {
+    messaging.onTokenRefresh.listen((event) {
+      event.toString();
+      if (kDebugMode) {
+        print('Token refreshed');
+      }
+    });
+  }
 }
