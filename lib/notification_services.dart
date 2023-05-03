@@ -1,30 +1,32 @@
-import 'dart:math';
-
-import 'package:app_settings/app_settings.dart';
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'message_screen.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationServices {
-  // initializing firebase message plugin
+  //initialising firebase message plugin
   FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  //initialising firebase message plugin
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  // function to initialise flutter local notification plugin to show notifications for android when app is active
+  //function to initialise flutter local notification plugin to show notifications for android when app is active
   void initLocalNotifications(
       BuildContext context, RemoteMessage message) async {
-    var androidInitialization =
+    var androidInitializationSettings =
         const AndroidInitializationSettings('@mipmap/ic_launcher');
-    var iosInitialization = const DarwinInitializationSettings();
-    var initializationSettings = InitializationSettings(
-      android: androidInitialization,
-      iOS: iosInitialization,
-    );
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings,
+    var iosInitializationSettings = const DarwinInitializationSettings();
+
+    var initializationSetting = InitializationSettings(
+        android: androidInitializationSettings, iOS: iosInitializationSettings);
+
+    await _flutterLocalNotificationsPlugin.initialize(initializationSetting,
         onDidReceiveNotificationResponse: (payload) {
-      //TODO: handleMessage(context, message);
+      // handle interaction when app is active for android
+      handleMessage(context, message);
     });
   }
 
@@ -34,12 +36,20 @@ class NotificationServices {
       AndroidNotification? android = message.notification!.android;
 
       if (kDebugMode) {
-        print('Notification title: ${message.notification!.title}');
-        print('Notification body: ${message.notification!.body}');
-        print('Count: ${android!.count}');
-        print('Data: ${message.data}');
+        print("notifications title:${notification!.title}");
+        print("notifications body:${notification.body}");
+        print('count:${android!.count}');
+        print('data:${message.data.toString()}');
       }
-      showNotification(message);
+
+      if (Platform.isIOS) {
+        forgroundMessage();
+      }
+
+      if (Platform.isAndroid) {
+        initLocalNotifications(context, message);
+        showNotification(message);
+      }
     });
   }
 
@@ -64,37 +74,40 @@ class NotificationServices {
         print('user granted provisional permission');
       }
     } else {
+      //appsetting.AppSettings.openNotificationSettings();
       if (kDebugMode) {
         print('user denied permission');
-        AppSettings.openNotificationSettings();
       }
     }
   }
 
+  // function to show visible notification when app is active
   Future<void> showNotification(RemoteMessage message) async {
     AndroidNotificationChannel channel = AndroidNotificationChannel(
-        Random.secure().nextInt(1000).toString(), 'High important notification',
-        importance: Importance.max);
+      message.notification!.android!.channelId.toString(),
+      message.notification!.android!.channelId.toString(),
+      importance: Importance.max,
+      showBadge: true,
+    );
 
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-      channel.id,
-      channel.name,
-      channelDescription: 'channel description',
+      channel.id.toString(),
+      channel.name.toString(),
+      channelDescription: 'your channel description',
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'ticker',
+      //  icon: largeIconPath
     );
 
-    const DarwinNotificationDetails iosNotificationDetails =
+    const DarwinNotificationDetails darwinNotificationDetails =
         DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+            presentAlert: true, presentBadge: true, presentSound: true);
 
     NotificationDetails notificationDetails = NotificationDetails(
-        android: androidNotificationDetails, iOS: iosNotificationDetails);
+        android: androidNotificationDetails, iOS: darwinNotificationDetails);
+
     Future.delayed(Duration.zero, () {
       _flutterLocalNotificationsPlugin.show(
           0,
@@ -104,17 +117,54 @@ class NotificationServices {
     });
   }
 
+  //function to get device token on which we will send the notifications
   Future<String> getDeviceToken() async {
     String? token = await messaging.getToken();
     return token!;
   }
 
-  void isRefreshToken() {
+  void isTokenRefresh() async {
     messaging.onTokenRefresh.listen((event) {
       event.toString();
       if (kDebugMode) {
-        print('Token refreshed');
+        print('refresh');
       }
     });
+  }
+
+  //handle tap on notification when app is in background or terminated
+  Future<void> setupInteractMessage(BuildContext context) async {
+    // when app is terminated
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+
+    if (initialMessage != null) {
+      handleMessage(context, initialMessage);
+    }
+
+    //when app ins background
+    FirebaseMessaging.onMessageOpenedApp.listen((event) {
+      handleMessage(context, event);
+    });
+  }
+
+  void handleMessage(BuildContext context, RemoteMessage message) {
+    if (message.data['type'] == 'msj') {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => MessageScreen(
+                    id: message.data['id'],
+                  )));
+    }
+  }
+
+  Future forgroundMessage() async {
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 }
