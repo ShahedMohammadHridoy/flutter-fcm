@@ -47,15 +47,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 var data = {
                   'to': value.toString(),
                   'notification': {
-                    'title': 'Asif',
-                    'body': 'Subscribe to my channel',
+                    'title': 'Shahed',
+                    'body': 'Hello, this is the body of notification',
                   },
                   'android': {
                     'notification': {
                       'notification_count': 23,
                     },
                   },
-                  'data': {'type': 'msj', 'id': 'Asif Taj'}
+                  'data': {'type': 'msj', 'id': 'Shahed'}
                 };
 
                 await http.post(
@@ -63,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     body: jsonEncode(data),
                     headers: {
                       'Content-Type': 'application/json; charset=UTF-8',
-                      'Authorization':
-                          'key=AAAAp9pXDFM:APA91bGhBeMCUABE2PXjl9UqodAZ2WdV_UI6PoiwdCzYaT8KeZmBKZszc01CD1GgN0OAJ1w3sNw9IVISyKhrrxQLASHizenGJUr2hjzoPjbjFu0HAx1CTk0l8Ut95ZENAQyRKm6hrltV'
+                      // Replace the hashes with key from firebase console
+                      'Authorization': 'key=######################'
                     }).then((value) {
                   if (kDebugMode) {
                     print(value.body.toString());
